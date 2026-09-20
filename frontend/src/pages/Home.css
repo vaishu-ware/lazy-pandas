@@ -1,0 +1,1093 @@
+/* =========================
+   MAIN CONTAINER
+========================= */
+
+.chat-container {
+  height: 100vh;
+
+  display: flex;
+
+  background: #f5f5f5;
+}
+
+
+/* =========================
+   LEFT SIDEBAR
+========================= */
+
+.sidebar {
+  width: 320px;
+
+  background: white;
+
+  border-right: 1px solid #ddd;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+
+/* =========================
+   SIDEBAR HEADER
+========================= */
+
+.sidebar-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 15px;
+
+  border-bottom: 1px solid #ddd;
+
+  flex-shrink: 0;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+
+  font-size: 22px;
+}
+
+
+/* =========================
+   LOGOUT BUTTON
+========================= */
+
+.logout-button {
+  padding: 7px 12px;
+
+  border: none;
+
+  border-radius: 6px;
+
+  background: #dc3545;
+
+  color: white;
+
+  font-size: 13px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #b02a37;
+}
+
+
+/* =========================
+   USERS LIST
+========================= */
+
+.users-list {
+  padding: 10px;
+
+  overflow-y: auto;
+}
+
+
+/* =========================
+   USER ITEM
+========================= */
+
+.user-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  margin-bottom: 4px;
+
+  cursor: pointer;
+
+  border-radius: 10px;
+
+  border-left: 4px solid transparent;
+
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+/* Normal hover */
+
+.user-item:hover {
+  background: #f3f3f3;
+}
+
+
+/* =========================
+   SELECTED USER
+========================= */
+
+.user-item.selected {
+  background: #f2e8ff;
+
+  border-left-color: #a31de6;
+
+  box-shadow:
+    0 2px 10px rgba(163, 29, 230, 0.15);
+
+  color: #4b176b;
+}
+
+
+/* Keep selected item slightly stronger on hover */
+
+.user-item.selected:hover {
+  background: #ead8ff;
+
+  box-shadow:
+    0 3px 12px rgba(163, 29, 230, 0.2);
+}
+
+
+.user-item img {
+  width: 45px;
+
+  height: 45px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+
+  flex-shrink: 0;
+}
+
+.user-item h3 {
+  margin: 0;
+
+  font-size: 16px;
+}
+
+.user-item p {
+  margin: 4px 0 0;
+
+  font-size: 13px;
+
+  color: #777;
+}
+
+.user-item.selected p {
+  color: #76568c;
+}
+
+.no-users {
+  text-align: center;
+
+  color: #777;
+}
+
+
+/* =========================
+   CREATE GROUP BUTTON
+========================= */
+
+.create-group-button {
+  display: block;
+
+  width: 90%;
+
+  margin: 10px auto;
+
+  padding: 12px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: #a31de6;
+
+  color: white;
+
+  font-size: 15px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.create-group-button:hover {
+  background: #671291;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 4px 10px rgba(163, 29, 230, 0.25);
+}
+
+
+/* =========================
+   GROUPS SECTION
+========================= */
+
+.groups-section {
+  border-top: 1px solid #ddd;
+
+  padding: 10px 0;
+
+  overflow-y: auto;
+
+  flex: 1;
+}
+
+.groups-title {
+  font-size: 14px;
+
+  color: #667781;
+
+  padding: 0 15px;
+
+  margin: 5px 0 10px;
+}
+
+
+/* =========================
+   GROUP ITEM
+========================= */
+
+.group-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px 15px;
+
+  margin: 2px 8px;
+
+  cursor: pointer;
+
+  border-radius: 10px;
+
+  border-left: 4px solid transparent;
+
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+/* Normal hover */
+
+.group-item:hover {
+  background: #f0f2f5;
+}
+
+
+/* =========================
+   SELECTED GROUP
+========================= */
+
+.group-item.selected {
+  background: #f2e8ff;
+
+  border-left-color: #a31de6;
+
+  box-shadow:
+    0 2px 10px rgba(163, 29, 230, 0.15);
+}
+
+
+/* Selected group hover */
+
+.group-item.selected:hover {
+  background: #ead8ff;
+
+  box-shadow:
+    0 3px 12px rgba(163, 29, 230, 0.2);
+}
+
+
+.group-icon {
+  width: 40px;
+
+  height: 40px;
+
+  border-radius: 50%;
+
+  background: #f18ed3;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 20px;
+
+  flex-shrink: 0;
+}
+
+.group-item h3 {
+  margin: 0;
+
+  font-size: 15px;
+}
+
+.group-item p {
+  margin: 3px 0 0;
+
+  font-size: 12px;
+
+  color: #667781;
+}
+
+.no-groups {
+  font-size: 13px;
+
+  color: #888;
+
+  padding: 0 15px;
+}
+
+
+/* =========================
+   RIGHT CHAT AREA
+========================= */
+
+.chat-area {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+/* =========================
+   WELCOME SCREEN
+========================= */
+
+.welcome-chat {
+  height: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: center;
+}
+
+.big-panda {
+  font-size: 80px;
+
+  margin-bottom: 20px;
+}
+
+.welcome-chat h1 {
+  margin-bottom: 10px;
+}
+
+.welcome-chat p {
+  color: #777;
+}
+
+
+/* =========================
+   SELECTED CHAT
+========================= */
+
+.selected-chat {
+  height: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+
+/* =========================
+   CHAT HEADER
+========================= */
+
+.chat-header {
+  height: 75px;
+
+  background: white;
+
+  border-bottom: 1px solid #ddd;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 10px 20px;
+
+  flex-shrink: 0;
+}
+
+.chat-header img {
+  width: 50px;
+
+  height: 50px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.chat-header h2 {
+  margin: 0;
+
+  font-size: 20px;
+}
+
+.chat-header p {
+  margin: 3px 0 0;
+
+  color: #777;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   GROUP HEADER ICON
+========================= */
+
+.group-header-icon {
+  width: 50px;
+
+  height: 50px;
+
+  border-radius: 50%;
+
+  background: #f18ed3;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 25px;
+}
+
+
+/* =========================
+   MESSAGES AREA
+========================= */
+
+.messages-area {
+  flex: 1;
+
+  padding: 20px;
+
+  overflow-y: auto;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  background: #f5f5f5;
+}
+
+
+/* =========================
+   MESSAGE ROW
+========================= */
+
+.message-row {
+  display: flex;
+
+  width: 100%;
+}
+
+
+/* My messages */
+
+.my-message-row {
+  justify-content: flex-end;
+}
+
+
+/* Other messages */
+
+.their-message-row {
+  justify-content: flex-start;
+}
+
+
+/* =========================
+   MESSAGE BUBBLE
+========================= */
+
+.message-bubble {
+  max-width: 65%;
+
+  padding: 8px 10px 5px 12px;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  word-wrap: break-word;
+}
+
+
+/* =========================
+   GROUP SENDER
+========================= */
+
+.message-sender-name {
+  font-size: 13px;
+
+  font-weight: bold;
+
+  margin-bottom: 3px;
+
+  color: #128c7e;
+}
+
+
+/* =========================
+   MY MESSAGE
+========================= */
+
+.my-message {
+  background: #d9fdd3;
+
+  border-top-right-radius: 3px;
+}
+
+
+/* =========================
+   OTHER MESSAGE
+========================= */
+
+.their-message {
+  background: white;
+
+  border-top-left-radius: 3px;
+}
+
+
+/* =========================
+   MESSAGE TEXT
+========================= */
+
+.message-text {
+  font-size: 15px;
+
+  line-height: 1.4;
+
+  padding-right: 5px;
+}
+
+
+/* =========================
+   MESSAGE TIME
+========================= */
+
+.message-time {
+  font-size: 11px;
+
+  color: #667781;
+
+  align-self: flex-end;
+
+  margin-top: 3px;
+}
+
+
+/* =========================
+   MESSAGE INPUT
+========================= */
+
+.message-input {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  width: 100%;
+
+  padding: 10px 12px;
+
+  background-color: #ffffff;
+
+  border-top: 1px solid #e5e7eb;
+
+  box-sizing: border-box;
+
+  flex-shrink: 0;
+}
+
+
+
+/* Input */
+
+.message-input input {
+  flex: 1;
+
+  height: 44px;
+
+  padding: 0 16px;
+
+  border: none;
+
+  outline: none;
+
+  border-radius: 22px;
+
+  background-color: #f1f3f5;
+
+  color: #222;
+
+  font-size: 15px;
+
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.message-input input::placeholder {
+  color: #8a8f98;
+}
+
+.message-input input:focus {
+  background-color: #ffffff;
+
+  box-shadow:
+    0 0 0 2px #a31de6;
+}
+
+
+/* Send button */
+
+.message-input button {
+  width: 44px;
+
+  height: 44px;
+
+  flex-shrink: 0;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background-color: #a31de6;
+
+  color: white;
+
+  font-size: 0;
+
+  cursor: pointer;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  box-shadow:
+    0 2px 6px rgba(163, 29, 230, 0.3);
+
+  transition: all 0.2s ease;
+}
+
+
+/* Send icon */
+
+.message-input button::before {
+  content: "➤";
+
+  font-size: 19px;
+
+  transform: translateX(1px);
+}
+
+.message-input button:hover {
+  background-color: #671291;
+
+  transform: scale(1.05);
+
+  box-shadow:
+    0 4px 10px rgba(163, 29, 230, 0.35);
+}
+
+.message-input button:active {
+  transform: scale(0.95);
+}
+
+
+/* =========================
+   GROUP MODAL OVERLAY
+========================= */
+
+.group-modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.5);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  z-index: 1000;
+}
+
+
+/* =========================
+   GROUP MODAL
+========================= */
+
+.group-modal {
+  width: 400px;
+
+  max-width: 90%;
+
+  max-height: 80vh;
+
+  background: white;
+
+  border-radius: 12px;
+
+  padding: 25px;
+
+  box-shadow:
+    0 5px 25px rgba(0, 0, 0, 0.3);
+}
+
+.group-modal h2 {
+  margin-top: 0;
+
+  margin-bottom: 20px;
+}
+
+
+/* Group name input */
+
+.group-modal input[type="text"] {
+  width: 100%;
+
+  padding: 10px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 6px;
+
+  margin-bottom: 15px;
+
+  outline: none;
+}
+
+.group-modal input[type="text"]:focus {
+  border-color: #a31de6;
+
+  box-shadow:
+    0 0 0 2px rgba(163, 29, 230, 0.1);
+}
+
+
+/* =========================
+   GROUP USERS
+========================= */
+
+.group-users-list {
+  max-height: 250px;
+
+  overflow-y: auto;
+
+  margin-top: 10px;
+}
+
+.group-user {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 8px;
+
+  cursor: pointer;
+
+  border-radius: 6px;
+}
+
+.group-user:hover {
+  background: #f1f1f1;
+}
+
+.group-user img {
+  width: 35px;
+
+  height: 35px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+.group-user input[type="checkbox"] {
+  width: 16px;
+
+  height: 16px;
+}
+
+
+/* =========================
+   MODAL BUTTONS
+========================= */
+
+.group-modal-buttons {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.group-modal-buttons button {
+  padding: 10px 16px;
+
+  border: none;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+.group-modal-buttons button:first-child {
+  background: #eee;
+
+  color: #333;
+}
+
+.group-modal-buttons button:first-child:hover {
+  background: #ddd;
+}
+
+.group-modal-buttons button:last-child {
+  background: #a31de6;
+
+  color: white;
+}
+
+.group-modal-buttons button:last-child:hover {
+  background: #671291;
+}
+
+
+/* =========================
+   SCROLLBARS
+========================= */
+
+.users-list::-webkit-scrollbar,
+.groups-section::-webkit-scrollbar,
+.messages-area::-webkit-scrollbar,
+.group-users-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.users-list::-webkit-scrollbar-thumb,
+.groups-section::-webkit-scrollbar-thumb,
+.messages-area::-webkit-scrollbar-thumb,
+.group-users-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+
+  border-radius: 10px;
+}
+
+.users-list::-webkit-scrollbar-thumb:hover,
+.groups-section::-webkit-scrollbar-thumb:hover,
+.messages-area::-webkit-scrollbar-thumb:hover,
+.group-users-list::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+  .sidebar {
+    width: 280px;
+  }
+
+  .message-bubble {
+    max-width: 75%;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    width: 250px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 18px;
+  }
+
+  .user-item {
+    padding: 9px;
+  }
+
+  .user-item img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .message-input {
+    padding: 8px 10px;
+  }
+
+  .message-input input {
+    height: 42px;
+
+    font-size: 14px;
+  }
+
+  .message-input button {
+    width: 42px;
+
+    height: 42px;
+  }
+}
+
+
+
+
+
+
+
+.chat-header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-user-info img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chat-user-info h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.chat-user-info p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.notification-btn {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+
+  width: 45px;
+  height: 45px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: 0.2s;
+}
+
+.notification-btn:hover {
+  background: #8bdcf7;
+}
+
+
+.notification-count {
+  position: absolute;
+
+  top: 0;
+  right: 0;
+
+  min-width: 19px;
+  height: 19px;
+
+  padding: 0 5px;
+
+  background: #e53935;
+  color: white;
+
+  border-radius: 50%;
+
+  font-size: 11px;
+  font-weight: bold;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.date-separator {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0;
+}
+
+.date-separator span {
+  background: #d9aef0;
+  color: #0e0e0e;
+
+  padding: 6px 14px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
