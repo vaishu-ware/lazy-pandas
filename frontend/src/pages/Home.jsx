@@ -1,47 +1,8 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, useCallback } from "react";
 import "./Home.css";
 import socket from "../socket";
 
 
-const formatMessageTime = (date) => {
-  if (!date) return "";
-
-  return new Date(date).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const formatDateSeparator = (date) => {
-  if (!date) return "";
-
-  const messageDate = new Date(date);
-  const today = new Date();
-
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  const isSameDay = (d1, d2) =>
-    d1.getDate() === d2.getDate() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getFullYear() === d2.getFullYear();
-
-  if (isSameDay(messageDate, today)) {
-    return "Today";
-  }
-
-  if (isSameDay(messageDate, yesterday)) {
-    return "Yesterday";
-  }
-
-  // For older messages
-  return messageDate.toLocaleDateString([], {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
 function Home({ onLogout }) {
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -53,11 +14,78 @@ function Home({ onLogout }) {
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatId, setChatId] = useState(null);
+  const [unreadByChat, setUnreadByChat] = useState({});
+
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Group states
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedGroupUsers, setSelectedGroupUsers] = useState([]);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:5000/api/message/unread/count",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Unread count error:", data.message);
+        return;
+      }
+
+      setUnreadCount(data.unreadCount || 0);
+    } catch (error) {
+      console.error("Failed to fetch unread count:", error);
+    }
+  }, []);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:5000/api/message/notifications",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Notifications error:", data.message);
+        return;
+      }
+
+      setNotifications(data);
+
+      const newUnreadByChat = {};
+      data.forEach((n) => {
+        newUnreadByChat[n.chat._id] = n.unreadCount;
+      });
+      setUnreadByChat(newUnreadByChat);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, []);
+
+  const refreshCounts = useCallback(() => {
+    fetchUnreadCount();
+    fetchNotifications();
+  }, [fetchUnreadCount, fetchNotifications]);
 
   // =========================
   // SELECT USER
@@ -97,16 +125,10 @@ function Home({ onLogout }) {
 
       console.log("Chat created/found:", data);
 
-      // Select user
       setSelectedUser(user);
-
-      // Clear selected group
       setSelectedGroup(null);
-
-      // Save chat ID
       setChatId(data._id);
 
-      // Get old messages
       const messageResponse = await fetch(
         `http://localhost:5000/api/message/${data._id}`,
         {
@@ -124,32 +146,20 @@ function Home({ onLogout }) {
       }
 
       console.log("Old messages:", messageData);
-
       setMessages(messageData);
 
-      await fetch(`http://localhost:5000/api/message/read/${data._id}`,        //mark messgae as read
-        {
-          method: "PUT",
+      socket.emit("markMessagesRead", {
+        chatId: data._id,
+        userId: currentUserId,
+      });
 
-          headers: {
-            Authentication: `Bearer ${token}`,
-          },
-        }
-      );
+      setUnreadByChat((prev) => {
+        const updated = { ...prev };
+        delete updated[data._id];
+        return updated;
+      });
 
-      const unreadResponse = await fetch(
-        "http://localhost:5000/api/message/unread/count",
-        {
-          headers: {
-            Authentication: `Bearer ${token}`,
-          },
-        }
-      );
-      const unreadData = await unreadResponse.json();
-
-      setUnreadCount(unreadData.unreadCount || 0);
-
-
+      refreshCounts();
     } catch (error) {
       console.error("Failed to open chat:", error);
     }
@@ -165,16 +175,10 @@ function Home({ onLogout }) {
 
       console.log("Selected group:", group);
 
-      // Select group
       setSelectedGroup(group);
-
-      // Clear selected user
       setSelectedUser(null);
-
-      // Set group chat ID
       setChatId(group._id);
 
-      // Fetch old messages
       const response = await fetch(
         `http://localhost:5000/api/message/${group._id}`,
         {
@@ -187,16 +191,26 @@ function Home({ onLogout }) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.log(
-          "Failed to fetch group messages:",
-          data.message
-        );
+        console.log("Failed to fetch group messages:", data.message);
         return;
       }
 
       console.log("Old group messages:", data);
-
       setMessages(data);
+
+      const currentUserId = localStorage.getItem("userId");
+      socket.emit("markMessagesRead", {
+        chatId: group._id,
+        userId: currentUserId,
+      });
+
+      setUnreadByChat((prev) => {
+        const updated = { ...prev };
+        delete updated[group._id];
+        return updated;
+      });
+
+      refreshCounts();
     } catch (error) {
       console.error("Error opening group:", error);
     }
@@ -215,6 +229,17 @@ function Home({ onLogout }) {
 
     console.log("Joined chat:", chatId);
   }, [chatId]);
+
+  // =========================
+  // SOCKET SETUP (personal room)
+  // =========================
+
+  useEffect(() => {
+    const currentUserId = localStorage.getItem("userId");
+    if (currentUserId) {
+      socket.emit("setup", currentUserId);
+    }
+  }, []);
 
   // =========================
   // FETCH USERS
@@ -279,7 +304,6 @@ function Home({ onLogout }) {
         }
 
         console.log("Groups fetched:", data);
-
         setGroups(data);
       } catch (error) {
         console.error("Error fetching groups:", error);
@@ -324,10 +348,30 @@ function Home({ onLogout }) {
     const handleMessageReceived = (newMessage) => {
       console.log("Message received:", newMessage);
 
-      setMessages((previousMessages) => [
-        ...previousMessages,
-        newMessage,
-      ]);
+      const currentUserId = localStorage.getItem("userId");
+      const senderId =
+        typeof newMessage.sender === "object"
+          ? newMessage.sender._id
+          : newMessage.sender;
+
+      const messageChatId =
+        typeof newMessage.chat === "object"
+          ? newMessage.chat._id
+          : newMessage.chat;
+
+      if (messageChatId === chatId) {
+        setMessages((previousMessages) => [
+          ...previousMessages,
+          newMessage,
+        ]);
+
+        if (senderId !== currentUserId) {
+          socket.emit("markMessagesRead", {
+            chatId: messageChatId,
+            userId: currentUserId,
+          });
+        }
+      }
     };
 
     socket.on(
@@ -341,64 +385,143 @@ function Home({ onLogout }) {
         handleMessageReceived
       );
     };
-  }, []);
+  }, [chatId]);
 
-  /* FETCH UNREAD COUNT */
+  // =========================
+  // REAL-TIME UNREAD COUNT UPDATES
+  // =========================
 
   useEffect(() => {
+    const handleUnreadCountUpdate = ({
+      chatId: updatedChatId,
+      chatUnreadCount,
+      totalUnreadCount,
+    }) => {
+      setUnreadByChat((prev) => ({
+        ...prev,
+        [updatedChatId]: chatUnreadCount,
+      }));
+      setUnreadCount(totalUnreadCount);
 
-    const fetchUnreadCount = async () => {
-
-      try {
-
-        const token =
-          localStorage.getItem("token");
-
-        const response = await fetch(
-          "http://localhost:5000/api/message/unread/count",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-
-        const data =
-          await response.json();
-
-
-        if (!response.ok) {
-
-          console.log(
-            "Unread count error:",
-            data.message
-          );
-
-          return;
-        }
-
-
-        setUnreadCount(
-          data.unreadCount || 0
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          "Failed to fetch unread count:",
-          error
-        );
-
+      if (updatedChatId !== chatId) {
+        fetchNotifications();
       }
-
     };
 
+    socket.on(
+      "unreadCountUpdate",
+      handleUnreadCountUpdate
+    );
 
-    fetchUnreadCount();
+    return () => {
+      socket.off(
+        "unreadCountUpdate",
+        handleUnreadCountUpdate
+      );
+    };
+  }, [chatId, fetchNotifications]);
 
-  }, []);
+  // =========================
+  // REAL-TIME MESSAGES READ
+  // =========================
+
+  useEffect(() => {
+    const handleMessagesRead = ({ chatId: readChatId }) => {
+      setUnreadByChat((prev) => {
+        const updated = { ...prev };
+        delete updated[readChatId];
+        return updated;
+      });
+      fetchUnreadCount();
+      fetchNotifications();
+    };
+
+    socket.on(
+      "messagesRead",
+      handleMessagesRead
+    );
+
+    return () => {
+      socket.off(
+        "messagesRead",
+        handleMessagesRead
+      );
+    };
+  }, [fetchUnreadCount, fetchNotifications]);
+
+  // =========================
+  // INITIAL UNREAD COUNT & NOTIFICATIONS FETCH
+  // =========================
+
+  useEffect(() => {
+    const init = async () => {
+      await fetchUnreadCount();
+      await fetchNotifications();
+    };
+    init();
+  }, [fetchUnreadCount, fetchNotifications]);
+
+
+  /* HANDLE NOTIFICATION CLICK */
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      const token = localStorage.getItem("token");
+      const currentUserId = localStorage.getItem("userId");
+      const { chat } = notification;
+
+      if (chat.isGroupChat) {
+        setSelectedGroup(chat);
+        setSelectedUser(null);
+        setChatId(chat._id);
+      } else {
+        const chatUsers = chat.users || [];
+        const otherUser = chatUsers.find(
+          (u) => u._id !== currentUserId
+        );
+        if (otherUser) {
+          setSelectedUser({
+            _id: otherUser._id,
+            name: otherUser.name,
+            email: otherUser.email,
+            pic: otherUser.pic,
+          });
+          setSelectedGroup(null);
+          setChatId(chat._id);
+        }
+      }
+
+      socket.emit("markMessagesRead", {
+        chatId: chat._id,
+        userId: currentUserId,
+      });
+
+      const messageResponse = await fetch(
+        `http://localhost:5000/api/message/${chat._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const messageData = await messageResponse.json();
+      if (messageResponse.ok) {
+        setMessages(messageData);
+      }
+
+      setShowNotifications(false);
+
+      setUnreadByChat((prev) => {
+        const updated = { ...prev };
+        delete updated[chat._id];
+        return updated;
+      });
+
+      refreshCounts();
+    } catch (error) {
+      console.error("Failed to open chat from notification:", error);
+    }
+  };
 
 
 
@@ -473,6 +596,38 @@ function Home({ onLogout }) {
   };
 
   // =========================
+  // HELPER: get unread count for a sidebar user
+  // =========================
+
+  const getUnreadForUser = (userId) => {
+    const notification = notifications.find(
+      (n) =>
+        !n.chat.isGroupChat &&
+        n.chat.users &&
+        n.chat.users.some((u) => u._id === userId)
+    );
+
+    if (!notification) return 0;
+
+    const chatId = notification.chat._id;
+    return unreadByChat[chatId] !== undefined
+      ? unreadByChat[chatId]
+      : notification.unreadCount;
+  };
+
+  // =========================
+  // HELPER: get unread count for a sidebar group
+  // =========================
+
+  const getUnreadForGroup = (groupId) => {
+    return unreadByChat[groupId] !== undefined
+      ? unreadByChat[groupId]
+      : (notifications.find(
+          (n) => n.chat._id === groupId
+        )?.unreadCount || 0);
+  };
+
+  // =========================
   // JSX
   // =========================
 
@@ -481,7 +636,7 @@ function Home({ onLogout }) {
 
       {/* =========================
           LEFT SIDEBAR
-      ========================= */}
+       ========================= */}
 
       <div className="sidebar">
 
@@ -512,36 +667,44 @@ function Home({ onLogout }) {
               No other users found.
             </p>
           ) : (
-            users.map((user) => (
+            users.map((user) => {
+              const unread = getUnreadForUser(user._id);
+              return (
+                <div
+                  key={user._id}
 
-              <div
-                key={user._id}
+                  className={
+                    selectedUser?._id === user._id
+                      ? "user-item selected"
+                      : "user-item"
+                  }
 
-                className={
-                  selectedUser?._id === user._id
-                    ? "user-item selected"
-                    : "user-item"
-                }
+                  onClick={() =>
+                    handleSelectUser(user)
+                  }
+                >
 
-                onClick={() =>
-                  handleSelectUser(user)
-                }
-              >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <img
+                      src={user.pic}
+                      alt={user.name}
+                    />
 
-                <img
-                  src={user.pic}
-                  alt={user.name}
-                />
+                    <div>
+                      <h3>{user.name}</h3>
+                      <p>{user.email}</p>
+                    </div>
+                  </div>
 
-                <div>
-                  <h3>{user.name}</h3>
+                  {unread > 0 && (
+                    <span className="sidebar-badge">
+                      {unread}
+                    </span>
+                  )}
 
-                  <p>{user.email}</p>
                 </div>
-
-              </div>
-
-            ))
+              );
+            })
           )}
 
         </div>
@@ -696,41 +859,47 @@ function Home({ onLogout }) {
 
           ) : (
 
-            groups.map((group) => (
+            groups.map((group) => {
+              const unread = getUnreadForGroup(group._id);
+              return (
+                <div
+                  key={group._id}
 
-              <div
-                key={group._id}
+                  className={
+                    selectedGroup?._id === group._id
+                      ? "group-item selected"
+                      : "group-item"
+                  }
 
-                className={
-                  selectedGroup?._id === group._id
-                    ? "group-item selected"
-                    : "group-item"
-                }
+                  onClick={() =>
+                    handleSelectGroup(group)
+                  }
+                >
 
-                onClick={() =>
-                  handleSelectGroup(group)
-                }
-              >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div className="group-icon">
+                      👥
+                    </div>
 
-                <div className="group-icon">
-                  👥
+                    <div>
+                      <h3>
+                        {group.chatName}
+                      </h3>
+                      <p>
+                        {group.users.length} members
+                      </p>
+                    </div>
+                  </div>
+
+                  {unread > 0 && (
+                    <span className="sidebar-badge">
+                      {unread}
+                    </span>
+                  )}
+
                 </div>
-
-                <div>
-
-                  <h3>
-                    {group.chatName}
-                  </h3>
-
-                  <p>
-                    {group.users.length} members
-                  </p>
-
-                </div>
-
-              </div>
-
-            ))
+              );
+            })
 
           )}
 
@@ -741,7 +910,7 @@ function Home({ onLogout }) {
 
       {/* =========================
           RIGHT CHAT AREA
-      ========================= */}
+       ========================= */}
 
       <div className="chat-area">
 
@@ -808,25 +977,133 @@ function Home({ onLogout }) {
 
               )}
 
-              {/* Notification Button  */}
-              <button
-                className="notification-btn"
-                onClick={() => {
-                  console.log("Unread messages:",
-                    unreadCount
-                  );
-                }}
-                title="Notifications"
-              >
-                🔔
-                {unreadCount > 0 && (
-                  <span className="nofication-count">{unreadCount}</span>
+              {/* Notification Button */}
+              <div className="notification-wrapper">
+                <button
+                  className="notification-btn"
+                  onClick={() =>
+                    setShowNotifications(
+                      !showNotifications
+                    )
+                  }
+                  title="Notifications"
+                >
+                  🔔
+                  {unreadCount > 0 && (
+                    <span className="notification-count">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification Popup */}
+                {showNotifications && (
+                  <div className="notification-popup">
+                    <div className="notification-popup-header">
+                      <h3>Notifications</h3>
+                      <div className="notification-popup-header-actions">
+                        <span className="notification-popup-count">
+                          {notifications.length} unread
+                        </span>
+                        <button
+                          className="notification-close"
+                          onClick={() => setShowNotifications(false)}
+                          title="Close"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="notification-popup-list">
+                      {notifications.length === 0 ? (
+                        <div className="notification-empty">
+                          No new notifications
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={
+                              notification.chat._id
+                            }
+                            className="notification-item"
+                            onClick={() =>
+                              handleNotificationClick(
+                                notification
+                              )
+                            }
+                          >
+                            <div className="notification-avatar">
+                              {notification.chat.isGroupChat ? (
+                                "👥"
+                              ) : (
+                                <img
+                                  src={
+                                    notification.latestMessage.sender
+                                      .pic
+                                  }
+                                  alt={
+                                    notification.latestMessage.sender.name
+                                  }
+                                />
+                              )}
+                            </div>
+
+                            <div className="notification-content">
+                              <div className="notification-title">
+                                {" "}
+                                {notification.chat.isGroupChat
+                                  ? notification.chat.chatName
+                                  : notification.latestMessage.sender.name}
+                                {" "}
+                              </div>
+                              <div className="notification-preview">
+                                {
+                                  notification.latestMessage.content
+                                }
+                              </div>
+                              <div className="notification-time">
+                                {new Date(
+                                  notification.latestMessage.createdAt
+                                ).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            </div>
+
+                            {notification.unreadCount > 0 && (
+                              <span className="notification-count-inline">
+                                {notification.unreadCount}
+                              </span>
+                            )}
+
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="notification-popup-footer">
+                      <button
+                        className="notification-view-all"
+                        onClick={() => {
+                          if (notifications.length > 0) {
+                            handleNotificationClick(
+                              notifications[0]
+                            );
+                          }
+                        }}
+                      >
+                        View all
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
 
             {/* =========================
-                MESSAGES
+               MESSAGES
             ========================= */}
 
             <div className="messages-area">
@@ -852,7 +1129,7 @@ function Home({ onLogout }) {
                   const isMyMessage =
                     senderId === currentUserId;
 
-                  /* Date seprator logic */
+                  /* Date separator logic */
                   const currentMessageDate =
                     new Date(msg.createdAt);
 
@@ -987,7 +1264,7 @@ function Home({ onLogout }) {
             </div>
 
             {/* =========================
-                MESSAGE INPUT
+               MESSAGE INPUT
             ========================= */}
 
             <div className="message-input">

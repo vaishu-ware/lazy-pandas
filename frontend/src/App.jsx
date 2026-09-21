@@ -9,19 +9,14 @@ import "./App.css";
 
 function App() {
   const [showWelcome, setShowWelcome] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => {
+      const token = localStorage.getItem("token");
+      return token ? true : false;
+    }
+  );
   const [showRegister, setShowRegister] = useState(false);
- 
-  //login check
-  useEffect(() => {
-  const token = localStorage.getItem("token");
 
-  if (token) {
-    setIsLoggedIn(true);
-  } else {
-    setIsLoggedIn(false);
-  }
-}, []);
 
 //logout function
 const handleLogout = () => {
